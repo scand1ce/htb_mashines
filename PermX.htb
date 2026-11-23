@@ -67,6 +67,7 @@ lms                     [Status: 200, Size: 19347, Words: 4910, Lines: 353, Dura
 ---
 
 echo 10.129.104.147 lms.permx.htb permx.htb | sudo tee -a /etc/hosts
+---
 
 curl -I http://lms.permx.htb
 
